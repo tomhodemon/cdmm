@@ -76,9 +76,11 @@ _init_malloc(void)
 void *
 malloc(size_t bytes)
 {   
+    printf("\n[%s]\n", __func__);
+
     size_t nb;                  /* normalized request size */
     unsigned int idx;           /* associated bin index */
-    malloc_chunk *bin;          /* associated bin */
+    malloc_chunk **fb;          /* associated fastbin */
 
     malloc_chunk *victim;       /* inspected/selected chunk */
     size_t size;                /* its size */
@@ -112,13 +114,16 @@ malloc(size_t bytes)
         printf("idx: %d\n", idx);
 #endif
 
-        // find a suitable chunk 
-        bin = mstate.fastbins[idx];
+        /*
+            Find a suitable chunk
+        */
+        fb = &(mstate.fastbins[idx]);
 
-        _PRINT_ADDR(bin);
+        _PRINT_ADDR(*fb);
         
-        if (!bin)
-        {
+        if (!(*fb))
+        {   
+            printf("bin is NULL\n");
             // no suitable chunk find in fastbins, allocate memory from the top_chunk
             // trim a chunk for the requested allocation 
             // adjust the size of the top_chunk accordingly
@@ -138,7 +143,7 @@ malloc(size_t bytes)
                 set_head_size(victim, nb);
 
                 p = chunk2mem(victim);
-                return p;
+
             }
             else
             {
@@ -148,13 +153,13 @@ malloc(size_t bytes)
         } 
         else
         {
-            victim = bin;
+            victim = *fb;
+            *fb = victim->bk;
             p = chunk2mem(victim);
-            return p;
         }   
     }
-
-    p = NULL;
+   
+    printf("[%s]\n\n", __func__);
     return p;
 }   
 
